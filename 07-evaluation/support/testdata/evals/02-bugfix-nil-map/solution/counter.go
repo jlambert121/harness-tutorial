@@ -1,0 +1,19 @@
+package task
+
+// Counter counts occurrences of strings. The zero value should be ready to use.
+type Counter struct {
+	counts map[string]int
+}
+
+// Add records one occurrence of key.
+func (c *Counter) Add(key string) {
+	if c.counts == nil {
+		c.counts = map[string]int{}
+	}
+	c.counts[key]++
+}
+
+// Count returns how many times key was added.
+func (c *Counter) Count(key string) int {
+	return c.counts[key]
+}

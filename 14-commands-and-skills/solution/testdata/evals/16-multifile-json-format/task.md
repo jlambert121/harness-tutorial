@@ -1,0 +1,1 @@
+Add a --format flag to the report command. --format text (the default) keeps today's output exactly. --format json prints one JSON array of objects with the keys "name", "count", and "share", where share is the count divided by the total, rounded to two decimals. Put the JSON formatting next to the existing text formatter so both implement the same interface.

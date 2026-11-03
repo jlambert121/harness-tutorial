@@ -1,0 +1,7 @@
+{
+  "hooks": [
+    {"event": "post_tool_use", "matcher": "edit|write", "command": "$HOOKS_DIR/lint.sh", "timeout_sec": 120},
+    {"event": "stop", "command": "$HOOKS_DIR/test-on-stop.sh", "timeout_sec": 300},
+    {"event": "pre_tool_use", "matcher": "bash", "command": "$HOOKS_DIR/no-push.sh"}
+  ]
+}

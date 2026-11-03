@@ -1,0 +1,1 @@
+Implement Slugify in slug.go: lowercase the input, turn every run of characters that are not ASCII letters or digits into a single hyphen, and trim hyphens from both ends. Example: "  Hello, World! 2026 " becomes "hello-world-2026".

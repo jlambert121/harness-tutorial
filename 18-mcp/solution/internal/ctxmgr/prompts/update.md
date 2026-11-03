@@ -1,0 +1,1 @@
+The conversation began from an earlier summary, shown in <prior-summary> in the first message. Write a new summary that replaces it: carry forward everything from the prior summary that is still true, update what has changed, and add what happened since. Anything you do not carry into the new summary is lost.

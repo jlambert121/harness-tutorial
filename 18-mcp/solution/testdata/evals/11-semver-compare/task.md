@@ -1,0 +1,1 @@
+Implement Compare in semver.go. It must follow Semantic Versioning 2.0.0 precedence (spec section 11), including pre-release identifiers, and ignore build metadata. Return an error for strings that are not valid semantic versions.

@@ -1,0 +1,1 @@
+Add an integer Priority field to Todo. Store.List must return todos sorted by Priority (highest first), then by ID (lowest first). Store.Add takes the priority as a new third parameter. Update every caller.

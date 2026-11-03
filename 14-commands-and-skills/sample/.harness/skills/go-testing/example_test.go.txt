@@ -1,0 +1,16 @@
+func TestTitle(t *testing.T) {
+	tests := []struct {
+		name, in, want string
+	}{
+		{"empty", "", ""},
+		{"ascii", "hello world", "Hello World"},
+		{"unicode", "élan vital", "Élan Vital"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Title(tt.in); got != tt.want {
+				t.Errorf("Title(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}

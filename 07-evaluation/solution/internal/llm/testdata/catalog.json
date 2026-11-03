@@ -1,0 +1,232 @@
+{
+ "object": "list",
+ "data": [
+  {
+   "id": "anthropic/claude-sonnet-5.5",
+   "object": "model",
+   "created": 1755815280,
+   "released": 1790553600,
+   "owned_by": "anthropic",
+   "name": "Claude Sonnet 5.5",
+   "context_window": 1000000,
+   "max_tokens": 128000,
+   "type": "language",
+   "zdr": "all",
+   "no_training": "all",
+   "tags": [
+    "explicit-caching",
+    "file-input",
+    "reasoning",
+    "tool-use",
+    "vision",
+    "web-search",
+    "structured-output"
+   ],
+   "regions": [
+    "au",
+    "eu",
+    "us"
+   ],
+   "supported_specifications": [
+    "v2",
+    "v3",
+    "v4"
+   ],
+   "modalities": {
+    "input": [
+     "text",
+     "image",
+     "pdf"
+    ],
+    "output": [
+     "text"
+    ]
+   },
+   "supported_parameters": [
+    "max_tokens",
+    "stop",
+    "tools",
+    "tool_choice",
+    "reasoning",
+    "include_reasoning",
+    "response_format",
+    "structured_outputs"
+   ],
+   "temperature": false,
+   "reasoning_options": [
+    {
+     "type": "effort",
+     "values": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+     ]
+    }
+   ],
+   "knowledge": "2026-06",
+   "pricing": {
+    "input": "0.000002",
+    "output": "0.00001",
+    "input_cache_read": "0.0000001",
+    "input_cache_write": "0.0000025"
+   },
+   "model_eligibility": {
+    "evaluated_runtime": "http",
+    "status": "eligible"
+   }
+  },
+  {
+   "id": "anthropic/claude-haiku-5.5",
+   "object": "model",
+   "created": 1755815280,
+   "released": 1791331200,
+   "owned_by": "anthropic",
+   "name": "Claude Haiku 5.5",
+   "context_window": 1000000,
+   "max_tokens": 128000,
+   "type": "language",
+   "zdr": "all",
+   "no_training": "all",
+   "tags": [
+    "explicit-caching",
+    "file-input",
+    "reasoning",
+    "tool-use",
+    "vision",
+    "web-search",
+    "structured-output"
+   ],
+   "regions": [
+    "au",
+    "eu",
+    "jp",
+    "us"
+   ],
+   "supported_specifications": [
+    "v2",
+    "v3",
+    "v4"
+   ],
+   "modalities": {
+    "input": [
+     "text",
+     "image",
+     "pdf"
+    ],
+    "output": [
+     "text"
+    ]
+   },
+   "supported_parameters": [
+    "max_tokens",
+    "stop",
+    "tools",
+    "tool_choice",
+    "reasoning",
+    "include_reasoning",
+    "response_format",
+    "structured_outputs"
+   ],
+   "temperature": false,
+   "reasoning_options": [
+    {
+     "type": "toggle"
+    },
+    {
+     "type": "effort",
+     "values": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+     ]
+    }
+   ],
+   "pricing": {
+    "input": "0.0000001",
+    "input_tiers": [
+     {
+      "cost": "0.0000001",
+      "min": 0,
+      "max": 100001
+     },
+     {
+      "cost": "0.0000005",
+      "min": 100001
+     }
+    ],
+    "output": "0.0000005",
+    "input_cache_read": "0.00000001",
+    "input_cache_write": "0.000000125"
+   },
+   "model_eligibility": {
+    "evaluated_runtime": "http",
+    "status": "eligible"
+   }
+  },
+  {
+   "id": "alibaba/qwen-3-14b",
+   "object": "model",
+   "created": 1755815280,
+   "released": 1745798400,
+   "owned_by": "alibaba",
+   "name": "Qwen3-14B",
+   "context_window": 40960,
+   "max_tokens": 16384,
+   "type": "language",
+   "zdr": "all",
+   "no_training": "all",
+   "tags": [
+    "reasoning",
+    "tool-use",
+    "structured-output",
+    "open-weights"
+   ],
+   "supported_specifications": [
+    "v2",
+    "v3",
+    "v4"
+   ],
+   "modalities": {
+    "input": [
+     "text"
+    ],
+    "output": [
+     "text"
+    ]
+   },
+   "supported_parameters": [
+    "max_tokens",
+    "temperature",
+    "stop",
+    "tools",
+    "tool_choice",
+    "reasoning",
+    "include_reasoning",
+    "response_format",
+    "structured_outputs"
+   ],
+   "temperature": true,
+   "reasoning_options": [
+    {
+     "type": "toggle"
+    }
+   ],
+   "knowledge": "2025-04",
+   "pricing": {
+    "input": "0.00000012",
+    "output": "0.00000024"
+   },
+   "model_eligibility": {
+    "category": "policy",
+    "evaluated_runtime": "http",
+    "reason": "model_not_allowlisted",
+    "status": "ineligible"
+   }
+  }
+ ]
+}
