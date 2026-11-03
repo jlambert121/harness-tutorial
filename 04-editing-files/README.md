@@ -100,6 +100,8 @@ Provided in `support/`: `internal/diff` (`Unified(a, b, name string, context int
 
 ## Build it
 
+Continue from lesson 03 and copy this lesson’s `tests/` and `support/`. Work in your existing `internal/tools/` package; the diff package is supplied.
+
 1. **`Resolve`.** Tests: `go test ./internal/tools -run 'TestWorkspace|TestResolve'`.
    - `filepath.EvalSymlinks` fails on paths that don't exist, so write `realpath`: if the path exists, evaluate it. If it's a dangling symlink, follow its target. Otherwise resolve the parent and append the base name.
    - Compare against the **resolved** root as well. On macOS, `t.TempDir()` is under `/var`, which is a symlink to `/private/var`.
@@ -109,7 +111,7 @@ Provided in `support/`: `internal/diff` (`Unified(a, b, name string, context int
    - Line strategies: split `old` into lines, normalize each, slide a window over the content lines. Compute byte offsets from the line starts. Include the final `\n` in the span only if `old` ends with one.
    - Return `*AmbiguousError` at the first strategy with more than one match. Don't fall through to the next strategy.
 
-3. **`ReadTracker`.** A map from path to mtime and a map from path to mutex, both behind one mutex. Make every method nil-safe.
+3. **`ReadTracker`.** Record what the model has read so an edit can reject a stale view. Use a map from path to mtime and a map from path to mutex, both behind one mutex. Make every method nil-safe.
 
 4. **`edit`.** Tests: `-run 'TestEdit|TestConsecutive|TestPreserves'`.
    - Order: validate args → `Resolve` → `Lock` → `Check` → read → `decodeText` → match → replace → `encode` → write, keeping the file mode → `MarkRead` → diff.
@@ -171,9 +173,8 @@ The result passes `go vet`. Cost: about $0.002.
 
 ## Exercises
 
-1. **Re-indent on fuzzy match.** When the `trimmed` strategy matched, compute the indentation difference between `old_string`'s first line and the matched line, and apply it to every line of `new_string`. Add a case to `editbench` that proves it.
-2. **Multi-edit.** Change `edit` to accept `edits: [{old_string, new_string}]`, as pi does. Match every edit against the *original* content, reject overlaps, and apply them all or none.
-3. **apply_patch.** Implement Codex's grammar (`research-notes.md` has it) as a second tool, and offer it only to `openai/*` models, as opencode does. Compare failure rates in lesson 07's eval.
+1. **Re-indent on fuzzy match.** When the `trimmed` strategy matches, adjust `new_string` to the indentation of the matched lines. Add a case to `editbench`: does a successful match also produce a correct edit?
+2. **Multi-edit.** Accept several edits in one call, match them against the original content, and reject overlaps. What changes when the model needs related edits to succeed or fail together?
 
 ## Further reading
 

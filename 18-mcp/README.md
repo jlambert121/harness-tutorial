@@ -17,7 +17,7 @@ The demo measures a 43-tool server: about 7,000 tokens of definitions on every r
 - **opencode.** `local` (stdio) and `remote` (StreamableHTTP, falling back to SSE, with OAuth) servers. Tools are named `server_tool`. MCP prompts become slash commands.
 - **pi** rejected MCP in its original design: "MCP servers are overkill for most use cases, and they come with significant context overhead". It cited Playwright MCP at about 13.7k tokens and Chrome DevTools MCP at about 18k, 7–9% of the window. Its alternative is CLI tools with a README the model reads when it needs to. The current pi ships MCP anyway, but by default the tools aren't declared to the model at all. They're called from code (`codemode`) or loaded through `tool_search`.
 
-**A note on protocol versions.** The newest MCP revision, `2026-07-28`, **removes the `initialize` handshake**. Every request instead carries `_meta` with the protocol version and client capabilities, and servers implement `server/discover`. This lesson implements `2025-11-25`, the last revision with the handshake, because servers have had the longest to adopt it (an inference; I didn't survey servers). Exercise 3 adds the newer revision.
+**A note on protocol versions.** The newest MCP revision, `2026-07-28`, **removes the `initialize` handshake**. Every request instead carries `_meta` with the protocol version and client capabilities, and servers implement `server/discover`. This lesson implements `2025-11-25`, the last revision with the handshake, because servers have had the longest to adopt it (an inference; I didn't survey servers). Supporting the newer revision would require a different handshake.
 
 ## Design for our harness
 
@@ -52,7 +52,7 @@ model: tool_search{"query":"todo"} ─▶ every word must appear in a tool's nam
                                     ─▶ matching tools (≤5) are registered now, and appear in the next request
 ```
 
-This trades a round trip, plus a change to the tool list, for thousands of tokens on every request. Changing the tool list mid-session also changes the cached prefix (lesson 12). Claude Code avoids that by declaring deferred tools as stubs from the start (`defer_loading: true`), so the list never changes; ours does change. Exercise 2.
+This trades a round trip, plus a change to the tool list, for thousands of tokens on every request. Changing the tool list mid-session also changes the cached prefix (lesson 12). Claude Code avoids that by declaring deferred tools as stubs from the start (`defer_loading: true`), so the list never changes; ours does change. The optional deferral exercise explores this tradeoff.
 
 ### Configuration
 
@@ -85,10 +85,12 @@ Provided in `support/`: `cmd/mini-mcp` (with `--synthetic N` filler tools and `-
 
 ## Build it
 
+Continue from lesson 17 and copy this lesson’s `tests/` and `support/`. The `internal/mcp/` implementation is new; the example server and harness wiring are supplied.
+
 1. **Transport and handshake.** Test: `go test ./internal/mcp -run TestHandshake`. Start the process with stdin and stdout pipes and launch `readLoop`. `call()` registers a channel under a new id, writes one line, then `select`s on the channel, `dead` and `ctx.Done()`. Reject a server's unsupported protocol version before sending `notifications/initialized`; this client supports only `2025-11-25`.
 2. **Tools.** Tests: `-run 'TestHandshakeAndList|TestCall'`. Follow `nextCursor` until it's empty. Join text content parts; mark other kinds as omitted.
-3. **Crash handling.** Test: `-run TestServerCrash`.
-4. **Names.** Test: `-run TestToolName`.
+3. **Crash handling.** Fail pending calls if the server exits so the agent does not wait forever. Test: `-run TestServerCrash`.
+4. **Names.** Map server tool names to model-compatible names before registering them. Test: `-run TestToolName`.
 5. **Adapter and deferral.** Tests: `-run 'TestRegisterLoaded|TestDeferredSearch'`. `tool_search` is *not* read-only: it mutates the registry, so it must not run in parallel with tools that read it.
 
 Also fixed in this lesson, in lesson 01's client: a tool call with **no arguments** (here, `todo_list {}`) used to stream an empty `arguments` string. The empty `json.RawMessage` made `json.Marshal` fail for the whole message, so the trace recorder and the session store silently dropped it. `validArgs` now stores `{}`. The fix and its test are in every lesson's copy of `internal/llm`.
@@ -132,14 +134,13 @@ live (anthropic/claude-haiku-5.5, deferred): "Add 'buy milk' and 'call the plumb
 What it shows:
 
 - **Up front, 43 tool definitions cost 6,973 tokens on every request**, almost five times the system prompt and built-in tools together (lesson 06 measured 1,461). That's about 3.5% of a 200k window; pi's 7–9% figure is for Playwright MCP's ~13.7k tokens. Deferred, it's one 88-token definition.
-- **Search quality decides whether deferral works.** Requiring *every* query word to match made "todo list show list get items" and "list tasks" miss. The model recovered with the single word "todo", at the cost of two extra round trips. Real implementations rank by relevance instead (exercise 1).
+- **Search quality decides whether deferral works.** Requiring *every* query word to match made "todo list show list get items" and "list tasks" miss. The model recovered with the single word "todo", at the cost of two extra round trips. The optional search exercise explores ranking by relevance.
 - **The model batched** two `todo_add` calls in one step, and called the no-argument `todo_list` correctly. That call is the one that exposed the `validArgs` bug above.
 
 ## Exercises
 
-1. Rank `tool_search` results by how many query words match (or BM25 over name + description) and return the top 5 even when not every word matches. Rerun the live demo.
-2. Explore cache-stable deferral: declare tools up front as stubs and return full schemas through `tool_search` results while keeping the original tool definitions unchanged. Compare cache hit rates (lesson 12) with the current approach. Replacing a stub's schema in the tool list would change the cached prefix.
-3. Implement MCP `2026-07-28`: drop `initialize`, add `_meta` to every request, call `server/discover`, and handle error `-32022` by retrying with a supported version. Make `mini-mcp` support both revisions.
+1. Rank `tool_search` results instead of requiring every query word to match. Rerun the demo and compare the number of searches and model calls.
+2. Explore cache-stable deferral: declare tools as stubs and return full schemas through `tool_search` results while leaving the original definitions unchanged. Compare cache hits with the current approach. Replacing a stub’s schema in the tool list would change the cached prefix.
 
 ## Further reading
 

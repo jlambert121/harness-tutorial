@@ -53,23 +53,6 @@ func TestSplitPointInsideOneLongTurn(t *testing.T) {
 	}
 }
 
-func TestSerialize(t *testing.T) {
-	msgs := []llm.Message{
-		llm.UserText("fix the bug"),
-		{Role: llm.RoleAssistant, Blocks: []llm.Block{{Text: "Looking."}, {ToolCall: &llm.ToolCall{ID: "1", Name: "read", Args: json.RawMessage(`{"path":"a.go"}`)}}}},
-		{Role: llm.RoleTool, Result: &llm.ToolResult{CallID: "1", Name: "read", Content: strings.Repeat("z", 5000)}},
-	}
-	s := ctxmgr.Serialize(msgs)
-	for _, want := range []string{"[User]: fix the bug", "[Assistant]: Looking.", `[Assistant tool call]: read({"path":"a.go"})`, "[Tool result]: zzz", "chars truncated"} {
-		if !strings.Contains(s, want) {
-			t.Errorf("Serialize missing %q:\n%s", want, s)
-		}
-	}
-	if len(s) > 3000 {
-		t.Errorf("tool results must be cut to about 2000 chars; got %d", len(s))
-	}
-}
-
 func TestCompactSummarizesPrefixWithParentRequest(t *testing.T) {
 	url, reqs := fake.NewServer(t, fake.Text("## Goal\nfinish task F"))
 	c := ctxmgr.NewCompactor(llm.NewGateway(url, "k", llm.WithRetry(0, 0, 0)), "m", 5000)

@@ -65,7 +65,6 @@ type CompactOptions struct { Focus, Context string; RecentFiles []string }
 type CompactResult struct { Summary string; History []llm.Message; Cut int; Usage *llm.Usage }
 func (c *Compactor) Compact(ctx context.Context, system string, tools []llm.ToolSpec, msgs []llm.Message, opts CompactOptions) (*CompactResult, error)
 func SplitPoint(msgs []llm.Message, keepTokens int) int
-func Serialize(msgs []llm.Message) string        // [User]: / [Assistant]: / [Assistant tool call]: name(args) / [Tool result]: (≤2000 chars); provided for exercises and other callers — Compact sends the raw head instead, so the cached prefix matches
 func IsOverflow(err string) bool
 func (m *Manager) Need(est int) bool             // est > 0.9 × usable
 ```
@@ -88,14 +87,16 @@ Provided in `support/`:
 
 ## Build it
 
-1. **SplitPoint and Serialize.** Tests: `go test ./internal/ctxmgr -run 'TestSplitPoint|TestSerialize'`.
+Continue from lesson 12 and copy this lesson’s `tests/` and `support/`. Work in the existing context manager, agent, session, tools, and TUI packages; the compaction prompts, harness wiring, and demo are supplied.
+
+1. **SplitPoint.** Test: `go test ./internal/ctxmgr -run TestSplitPoint`. Keep a recent tail without separating a tool result from its call; otherwise the next model request can contain invalid history.
 2. **Compact.** Tests: `-run 'TestCompact|TestIterative'`.
    - Detect a prior summary with a regexp over the head's first message.
    - Build the replacement history as one user message (Context, then summary, then files) followed by the tail.
    - `TestCompactSummarizesPrefixWithParentRequest` checks that the request is the session's prefix plus the prompt.
-3. **IsOverflow.** Test: `-run TestIsOverflow`.
+3. **IsOverflow.** Recognize a context-overflow error so the agent can compact and retry once. Test: `-run TestIsOverflow`.
 4. **Agent hooks.** Tests: `go test ./internal/agent -run 'TestCompaction|TestOverflow'`. Track `overflowRetried` per run, and on a successful overflow compaction, `continue` the loop without consuming the step's outcome.
-5. **Session and tracker.** Tests: `go test ./internal/session -run TestMessagesRestart` and `go test ./internal/tools -run TestReadTrackerRecent`.
+5. **Session and tracker.** Persist the compacted history for resume and track recent files for re-injection. Tests: `go test ./internal/session -run TestMessagesRestart` and `go test ./internal/tools -run TestReadTrackerRecent`.
 6. **TUI.** Test: `go test ./internal/ui/tui -run TestCompactionShown`.
 
 ## Run it
@@ -146,9 +147,8 @@ What it shows:
 
 ## Exercises
 
-1. Use the small model for summaries (opencode uses the session model; Claude Code keeps the session model for cache reasons). Measure cost and whether BLUEFIN survives.
-2. Compact in the background: start the summary at 75% so it's ready at 90% (Codex has asynchronous compaction). What has to happen to messages added while the summary was being written?
-3. Replace the summary with Anthropic's server-side `compact_20260112` context edit for Anthropic models, and compare.
+1. Use a smaller model for summaries. Compare cost and whether the early BLUEFIN fact survives repeated compactions.
+2. Start compaction in the background. What must happen to messages added after the summary request begins but before it finishes?
 
 ## Further reading
 

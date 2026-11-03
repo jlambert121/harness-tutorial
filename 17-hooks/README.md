@@ -90,13 +90,15 @@ Provided in `support/`: `cmd/harness` (loads hooks, `--hooks FILE`, wires `sessi
 
 ## Build it
 
+Continue from lesson 16 and copy this lesson’s `tests/` and `support/`. The `internal/hooks/` implementation is new; the harness wiring and example hooks are supplied. You will also change the existing registry, agent, and subagent code.
+
 1. **Load and match.** Tests: `go test ./internal/hooks -run 'TestLoad|TestMatch'`.
 2. **Run one hook.** Tests: `-run 'TestExit2|TestPayload|TestJSON|TestPlain|TestOther|TestTimeout'`.
    - Same subprocess care as lesson 05: `Setpgid`, `cmd.Cancel` killing the group, `WaitDelay`.
    - Only parse stdout as JSON when it starts with `{`.
 3. **Combine.** Test: `-run TestMultiple`.
-4. **Tool integration.** Tests: `go test ./internal/tools -run 'TestPreToolUse|TestPostToolUse'`.
-5. **Agent integration.** Tests: `go test ./internal/agent -run 'TestPromptHook|TestStopHook'`. A blocked prompt must not reach the model *or* the history.
+4. **Tool integration.** Run pre- and post-tool hooks around model-requested actions so hooks can block, modify, or add feedback. Tests: `go test ./internal/tools -run 'TestPreToolUse|TestPostToolUse'`.
+5. **Agent integration.** Run prompt and stop hooks at their respective boundaries, allowing stop feedback to continue the loop. Tests: `go test ./internal/agent -run 'TestPromptHook|TestStopHook'`. A blocked prompt must not reach the model *or* the history.
 
 ## Run it
 
@@ -136,9 +138,8 @@ When hooks pay off: weaker models, longer tasks, and repositories whose own test
 
 ## Exercises
 
-1. **Diagnostics with context.** Make `lint.sh` print each `go vet` error with its enclosing function (`go/ast`), as Aider does, and compare turns-to-fix on a task seeded with a vet error.
-2. **A prompt hook.** `user_prompt_submit` that adds the current branch and `git status --short` as context. Does the model use it?
-3. **An LLM hook.** A `pre_tool_use` handler that asks the small model "is this command consistent with the user's last request?" and blocks if not (Claude Code's `prompt` handler type). Run it against lesson 09's red-team cases.
+1. **Diagnostics with context.** Add the enclosing function to each `go vet` error from `lint.sh`. Compare turns-to-fix on a seeded error with and without that context.
+2. **A prompt hook.** Add the current branch and `git status --short` to the submitted prompt. Inspect the trace: does the model use the extra context, and what does it cost?
 
 ## Further reading
 

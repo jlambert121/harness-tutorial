@@ -2,7 +2,7 @@
 
 ## What you'll build
 
-You'll set up the Go module that becomes your harness. You'll also write its first piece: a client for the Vercel AI Gateway model catalog. The catalog gives you, for every model, the context window, per-token prices, and capability tags such as tool use, caching and reasoning. Later lessons read this data for cost accounting (lesson 01), context budgets (lesson 11) and model routing (lesson 19), so you won't hard-code any of it.
+You'll set up the Go module that becomes your harness and use a supplied client for the Vercel AI Gateway model catalog. The catalog describes models' context windows, per-token prices, and capability tags such as tool use, caching and reasoning. The model-list command uses those fields, and the harness uses the catalog's context window for budgeting in lesson 11. Lesson 01 also supports catalog pricing as a cost fallback when it is supplied to the client.
 
 Before writing code, this lesson covers what a harness is and how the well-known ones differ.
 
@@ -62,9 +62,9 @@ Decisions that apply throughout:
 - **The loop emits events; UIs subscribe to them.** A line REPL comes first and a TUI in lesson 08. Headless mode and evals use the same events.
 - **Tests never touch the network.** Lesson 01 provides a fake model server that replays scripted responses.
 
-## The contract
+## Supplied catalog client
 
-Package `harness/internal/llm`, file `catalog.go`:
+`support/internal/llm/catalog.go` provides these types and functions:
 
 ```go
 type Pricing struct {
@@ -104,26 +104,20 @@ func FetchCatalog(ctx context.Context, baseURL, apiKey string) ([]ModelInfo, err
 **Every lesson works the same way:**
 1. Read the lesson.
 2. Copy its `tests/` and `support/` into your module: `cp -R <lesson>/tests/. <lesson>/support/. ~/src/my-harness/`. Replace `<lesson>` with the absolute path to that lesson directory.
-3. Implement the contract until `go test ./...` passes.
+3. Follow the build steps and run `go test ./...`.
 4. Run the demo.
+
+The build steps set up the foundation for later lessons. Any exercises are optional experiments, and later lessons do not depend on them.
 
 If you get stuck, `solution/` holds the reference module as of the end of the lesson. `diff -r 03-tool-design/solution 04-editing-files/solution` shows exactly what one lesson adds.
 
 ### Steps
 
-1. **Look at the real data first.**
-   ```sh
-   curl -s https://ai-gateway.vercel.sh/v1/models | python3 -m json.tool | less
-   ```
-   The listing needs no authentication. Note that prices are **strings** in USD per token (`"input": "0.000002"`), and that some models also carry `input_tiers` (prices that change past a token threshold) and `regional` prices. Use only the base price.
+After copying this lesson’s `tests/` and `support/` into your module, `internal/llm/catalog.go` and `cmd/models` are ready to use. The catalog client is supplied because fetching and parsing JSON is supporting plumbing; the harness decisions are how to use the resulting model data.
 
-2. **`ParseCatalog`** turns the response body (`{"data": [ ... ]}`) into `[]ModelInfo`. Tests: `TestParseCatalog`, `TestParseCatalogMissingPricing`, `TestParseCatalogBadPrice`.
-   - A missing price is `0`. A price that isn't a valid number is an error. A silently wrong price would corrupt every cost figure later.
-   - `model_eligibility` only appears in authenticated responses: `{"status":"ineligible","reason":"model_not_allowlisted"}`.
-
-3. **`FetchCatalog`** does `GET {baseURL}/models`. Test: `TestFetchCatalogSendsAuthOnlyWithKey`, `TestFetchCatalogHTTPError`.
-   - With a key, send `Authorization: Bearer <key>` and add `?include_availability=true`. The gateway then tells you which models your team may use. Teams can restrict models: on the account used to write this tutorial, only 40 of 477 models are allowed, and a request to any other model fails with HTTP 403 `RestrictedModelsError`.
-   - On a non-200 status, return an error that includes the body. Gateway errors are JSON with a useful `message`.
+1. **Inspect the model data.** Run `go run ./cmd/models --limit 15`. Pick two available models and compare their context windows, prices, and caching capabilities. A harness uses those differences when budgeting context and reporting cost in later lessons.
+2. **Connect the data to the code.** Read `cmd/models/main.go` and find where it filters for tool use and displays context and prices. The supplied `catalog.go` fetches and parses those fields; you do not need to implement it.
+3. **Verify the client.** Run `go test ./internal/llm/`. The tests use a fake HTTP server; the model listing in step 1 uses the live gateway.
 
 ## Run it
 
@@ -156,12 +150,6 @@ Things to notice; each comes back in a later lesson:
 - **Try `--all`** to see ineligible models and the reasons.
 
 Cost to run: free; the catalog endpoint isn't billed.
-
-## Exercises
-
-1. Add a `--provider anthropic` filter. The provider is the prefix before `/`.
-2. Fetch `GET /v1/models/{creator}/{model}/endpoints` for one model. It lists every upstream provider serving that model, with its latency and throughput. The gateway uses this list for fallbacks; lesson 19 uses it.
-3. Use `input_tiers` to compute what a 150k-token request costs on `anthropic/claude-haiku-5.5`. Above 100k tokens the price per token rises 5x.
 
 ## Further reading
 

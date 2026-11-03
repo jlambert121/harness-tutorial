@@ -1,6 +1,6 @@
 # Build Your Own Coding Agent Harness (in Go)
 
-A guided tutorial for building a coding agent harness, the program around a language model that turns it into something like pi, opencode, Codex CLI, or Claude Code. You write the harness yourself, one capability per lesson. Each lesson explains how the real harnesses solve the problem and why. It then gives you a contract to implement, the tests that prove your implementation works, and a demo that shows what you built.
+A guided tutorial for building a coding agent harness, the program around a language model that turns it into something like pi, opencode, Codex CLI, or Claude Code. You build its agent mechanisms one capability per lesson, using supplied code for supporting plumbing. Each lesson explains the design, provides tests, and includes a demo.
 
 ## Prerequisites
 
@@ -22,8 +22,10 @@ NN-lesson-name/
 1. Read the lesson's `README.md`.
 2. From the tutorial directory, copy that lesson's files into your module, for example:
    `cp -R 00-orientation/tests/. 00-orientation/support/. ~/src/my-harness/`
-3. Implement until `go test ./...` passes.
+3. Follow the build steps and run `go test ./...`.
 4. Run the demo.
+
+The **Build it** steps cover the mechanisms that later lessons build on; orientation sets up supplied catalog code. The **Exercises** are optional experiments; no later lesson requires them. They can change the harness beyond the reference implementation, so use a separate copy if you want to keep the lesson sequence easy to follow.
 
 Run the Go commands from your module. In lesson commands, replace `<path-to>` or `<lesson>` with the absolute path to the tutorial or lesson directory. Some demos reuse `/tmp/textkit` or `/tmp/sample`; use a fresh destination when copying a sample, since `cp -R` behaves differently when the destination already exists.
 

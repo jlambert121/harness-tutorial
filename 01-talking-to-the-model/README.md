@@ -106,7 +106,7 @@ The consumer must read until the channel closes. `done.Message.Stop` tells it ho
 
 ## The contract
 
-Package `harness/internal/llm`. Write `types.go` exactly as follows. The tests and the provided fake server depend on these names.
+Package `harness/internal/llm`. The supplied `types.go` defines these provider-neutral types, which the tests and fake server also use:
 
 ```go
 type Role string
@@ -161,12 +161,11 @@ type StreamEvent struct {
 type Client interface { Stream(ctx context.Context, req Request) <-chan StreamEvent }
 ```
 
-The full file with JSON tags is `solution/internal/llm/types.go`. Copying it is fine; the types are the contract, not the exercise.
+The full file, including JSON tags, is supplied in `support/internal/llm/types.go`.
 
 Functions to write:
 
 ```go
-func ReadSSE(r io.Reader, onData func(data []byte) error) error        // sse.go
 func EncodeRequest(req Request) ([]byte, error)                         // wire.go
 func CostFromUsage(u Usage, p Pricing) float64                          // cost.go
 func NewGateway(baseURL, apiKey string, opts ...Option) *Gateway        // client.go; *Gateway implements Client
@@ -175,25 +174,23 @@ func WithHTTPClient(c *http.Client) Option
 func WithPricing(p map[string]Pricing) Option
 ```
 
-Provided in `support/`: `internal/llm/fake` (scripted gateway), `cmd/harness` (chat REPL), `cmd/bench`.
+Provided in `support/`: `internal/llm/types.go`, `internal/llm/sse.go` (SSE framing), `internal/llm/fake` (scripted gateway), `cmd/harness` (chat REPL), `cmd/bench`.
 
 ## Build it
 
+Continue from lesson 00 and copy this lesson’s `tests/` and `support/`. The message types and SSE reader are supplied in `internal/llm/`; implement the remaining functions in the contract above.
+
 1. **Read the fake first.** `support/internal/llm/fake/fake.go` shows the exact chunk shapes your client will parse. `Turn` fields script text, thinking, tool calls (`Interleave: true` for interleaved fragments), errors (`Status`, `Header`, `Body`), and hangs (`HangAfter`). Every later lesson tests against it.
 
-2. **`types.go`.** Copy the contract. `go vet ./...` should now complain only about missing functions.
+2. **Inspect the supplied types and SSE reader.** `types.go` gives the agent provider-neutral messages; `sse.go` handles event framing. Your client will still need to interpret each event and assemble the model’s response.
 
-3. **`ReadSSE`.** Tests: `go test ./internal/llm -run TestReadSSE`.
-   - Join multiple `data:` lines in one event with `\n`. Skip `:` comment lines. Accept `\r\n`. Dispatch on a blank line, and dispatch a final event that has no trailing blank line. Stop at `[DONE]`.
-   - Use `bufio.Reader`, not `bufio.Scanner`. Scanner's default 64 KiB token limit breaks on large chunks (`TestReadSSELargeEvent` sends 1 MiB).
-
-4. **`EncodeRequest`.** Tests: `-run TestEncodeRequest`.
+3. **`EncodeRequest`.** Tests: `-run TestEncodeRequest`.
    - System prompt as the first message, only if non-empty.
    - Assistant: `content` is `null` when there's no text. `tool_calls[].function.arguments` is a string, and `"{}"` for empty args. `reasoning_details` comes from `Thinking.Raw`.
    - User messages with one text block send `content` as a string. With several blocks, send an array of `{"type":"text","text":...}` parts; lesson 12 needs parts for cache markers.
    - `Reasoning: "enabled"` → `{"enabled": true}`; any other non-empty value → `{"effort": value}`.
 
-5. **Streaming and accumulation (`Gateway.Stream`).** Tests: `-run 'TestStream|TestStop|TestUsage'`.
+4. **Streaming and accumulation (`Gateway.Stream`).** Tests: `-run 'TestStream|TestStop|TestUsage'`.
    - Run the request in a goroutine that owns the channel and always sends exactly one `done`, then closes.
    - Keep per-index state for tool calls: `id`, `name`, and an argument `strings.Builder`. Emit `toolcall_start` the first time an index appears.
    - Merge `reasoning_details` fragments by `index`. String fields concatenate (`text` arrives in one fragment, `signature` in another); `type`, `format` and `id` don't.
@@ -201,12 +198,12 @@ Provided in `support/`: `internal/llm/fake` (scripted gateway), `cmd/harness` (c
    - Keep each call's `Args` valid JSON. No arguments becomes `{}`, and truncated JSON is stored as a JSON string (test: `TestToolArgsAlwaysValidJSON`). An empty `json.RawMessage` makes `json.Marshal` fail for the whole message. This was found in lesson 18, where a no-argument MCP tool silently dropped events from traces and messages from session files.
    - When the context is cancelled, return what you have with `Stop: StopAborted`.
 
-6. **Retries and errors.** Tests: `-run 'TestRetry|TestNoRetry|TestContextOverflow'`.
+5. **Retries and errors.** Tests: `-run 'TestRetry|TestNoRetry|TestContextOverflow'`.
    - Loop around `http.Client.Do`. On a retryable status, read and close the body, wait, try again. Errors become `*APIError{Status, Message}`, with `Message` taken from `{"error":{"message":...}}`.
    - Header precedence: `Retry-After-Ms`, then `Retry-After` (seconds or an HTTP date), then exponential backoff with jitter.
    - Make the wait a `select` on `ctx.Done()`, so Ctrl-C during a backoff returns immediately.
 
-7. **Cost.** Tests: `-run 'TestCost'`. Use `usage.cost` when present, otherwise `WithPricing` and `CostFromUsage`.
+6. **Cost.** Tests: `-run 'TestCost'`. Use `usage.cost` when present, otherwise `WithPricing` and `CostFromUsage`.
 
 When stuck, compare with `solution/internal/llm/client.go`.
 
@@ -248,9 +245,8 @@ Cost: about $0.10 per run of the benchmark.
 
 ## Exercises
 
-1. Add `--reasoning high` to the bench and compare with the default. How much latency and cost does it add for Sonnet?
-2. Make `Stream` time out a stalled stream: no chunk for 300 s, the stream idle timeout Codex uses. Write a test using `fake.Turn{HangAfter: 2}`.
-3. Print `provider_metadata.gateway.routing.finalProvider` from the last chunk. Which upstream provider served each model?
+1. Compare the same prompt with and without `--reasoning high` in the benchmark. How do reasoning tokens, latency, and cost change?
+2. Add a stream idle timeout and test it with `fake.Turn{HangAfter: 2}`. What should the harness return to the user if the model stalls after producing partial text?
 
 ## Further reading
 

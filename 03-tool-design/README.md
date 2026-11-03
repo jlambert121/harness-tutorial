@@ -4,7 +4,7 @@
 
 Four read-only tools (`read`, `glob`, `grep`, `ls`), built on three pieces of infrastructure:
 
-- **Schemas generated from Go structs.**
+- **Schemas generated from Go structs** by supplied code.
 - **Argument validation** whose error messages the model can act on.
 - **Output limits** that keep one tool call from flooding the context.
 
@@ -103,12 +103,14 @@ func Ls() Tool     // "ls":    {path?, depth?}
 
 **Delete `read_file.go`.** `read` replaces it. The updated `tests/internal/agent/agent_test.go` uses `tools.Read()`.
 
-Provided in `support/`: `internal/tools/ignore.go` (`walk`, `matchGlob`, `loadIgnore`), `cmd/toolbench`, and an updated `cmd/harness` that registers all four tools.
+Provided in `support/`: `internal/tools/schema.go` (schema generation), `internal/tools/ignore.go` (`walk`, `matchGlob`, `loadIgnore`), `cmd/toolbench`, and an updated `cmd/harness` that registers all four tools.
 
 ## Build it
 
-1. **`SchemaFor`.** Test: `go test ./internal/tools -run TestSchemaFor`. Use a recursive `reflect` switch on `Kind()`. Read `desc` and `enum` tags. Treat `omitempty` as optional.
-2. **`Decode`.** Tests: `-run TestDecode`.
+Continue from lesson 02 and copy this lesson’s `tests/` and `support/`. Work in your existing `internal/tools/` package; `schema.go` and `ignore.go` are supplied.
+
+1. **Inspect `SchemaFor`.** The supplied function generates the schema that tells the model what arguments a tool accepts. Compare the struct and expected schema in `TestSchemaFor`, including required fields and descriptions; you will connect it to validation in the next steps.
+2. **`Decode`.** Validate model-supplied arguments and return errors the model can correct. Tests: `-run TestDecode`.
    - Unmarshal into `map[string]json.RawMessage` first. That lets you report unknown fields (listing the valid ones) and missing required fields.
    - Then unmarshal each field on its own to find type mismatches.
    - `kindOf` reports what the model actually sent.
@@ -179,9 +181,8 @@ Cost: about $0.002 for the live part.
 
 ## Exercises
 
-1. Add `"count"` totals to `glob` (files per directory) and see whether the model explores large repos in fewer steps.
-2. Change the registry cap to `TruncTail` and run a command that prints a long log. Which mode loses the information the model needs? Lesson 05 picks one for bash.
-3. Give `read` a `Details` payload (path, line range) and render it in the REPL instead of the first line of content.
+1. Compare head, tail, and head-plus-tail truncation on a long tool result with useful information at both ends. Which information reaches the model, and how does the overflow file help?
+2. Give `read` a `Details` payload with its path and line range, then render it in the REPL. Which information belongs in the model-facing result, and which is useful only to the user?
 
 ## Further reading
 

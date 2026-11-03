@@ -96,10 +96,12 @@ Provided in `support/`:
 
 ## Build it
 
-1. **Budget and calibrator.** Tests: `go test ./internal/ctxmgr -run 'TestUsable|TestCalibrator|TestEstimate'`.
+Continue from lesson 10 and copy this lesson’s `tests/` and `support/`. The `internal/ctxmgr/` implementation is new; the harness wiring and simulator are supplied. You will also change the existing agent and TUI.
+
+1. **Budget and calibrator.** Reserve space for the model’s reply and calibrate estimates against reported usage. Tests: `go test ./internal/ctxmgr -run 'TestUsable|TestCalibrator|TestEstimate'`.
 2. **Prune.** Tests: `-run TestPrune`. Copy the slice and copy each `ToolResult` you change; the input belongs to the agent's history. Pruned content is a marker, so a second pass skips it.
 3. **Manager.** Test: `-run TestManager`. Remember the last estimate so `Observe` can compare it with the real count.
-4. **Agent hook.** Test: `go test ./internal/agent -run TestTransform`.
+4. **Agent hook.** Apply the context transform to each request without changing the stored history. Test: `go test ./internal/agent -run TestTransform`.
 5. **TUI meter.** Test: `go test ./internal/ui/tui -run TestContextMeter`.
 
 ## Run it
@@ -140,9 +142,8 @@ What pruning can't do: if the *needed* content is old, clearing it loses it. Sum
 
 ## Exercises
 
-1. Add opencode's `MinClear`: only prune when at least 20,000 tokens would be cleared. Count how many distinct request prefixes a 30-prompt session produces with and without it. Lesson 12 does this.
-2. Prune by relevance instead of age: never clear the result of the most recent `read` of each file path, however old.
-3. Persist pruning decisions as session entries (opencode marks parts `compacted`), so a resumed session prunes identically without recomputing.
+1. Add a minimum amount to clear before pruning, then count how many distinct request prefixes a 30-prompt session produces. Lesson 12 implements this; what does delaying a prune trade for cache stability?
+2. Preserve the most recent `read` result for each file instead of pruning by age alone. Compare what remains in context and how much room it uses.
 
 ## Further reading
 

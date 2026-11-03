@@ -8,23 +8,12 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
 
 	"harness/internal/llm"
 )
-
-// Resolve returns the first non-empty of: flag, $envKey, config, def.
-func Resolve(flag, envKey, config, def string) string {
-	for _, v := range []string{flag, os.Getenv(envKey), config} {
-		if v != "" {
-			return v
-		}
-	}
-	return def
-}
 
 var validID = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
 

@@ -74,42 +74,6 @@ func SplitPoint(msgs []llm.Message, keepTokens int) int {
 	return i
 }
 
-const serializeLimit = 2000
-
-// Serialize renders messages as labeled text. Summarizers given the raw
-// conversation tend to continue it instead of describing it (pi's reason for
-// this format); a transcript makes the task unambiguous.
-func Serialize(msgs []llm.Message) string {
-	var b strings.Builder
-	for _, m := range msgs {
-		switch {
-		case m.Role == llm.RoleTool && m.Result != nil:
-			fmt.Fprintf(&b, "[Tool result]: %s\n", cut(m.Result.Content, serializeLimit))
-		case m.Role == llm.RoleUser:
-			fmt.Fprintf(&b, "[User]: %s\n", m.Text())
-		default:
-			if t := m.Text(); t != "" {
-				fmt.Fprintf(&b, "[Assistant]: %s\n", t)
-			}
-			for _, c := range m.ToolCalls() {
-				fmt.Fprintf(&b, "[Assistant tool call]: %s(%s)\n", c.Name, c.Args)
-			}
-		}
-	}
-	return b.String()
-}
-
-func cut(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	k := n
-	for k > 0 && (s[k]&0xC0) == 0x80 {
-		k--
-	}
-	return s[:k] + fmt.Sprintf("… [%d chars truncated]", len(s)-k)
-}
-
 var priorRe = regexp.MustCompile(`(?s)<conversation-summary>\n?(.*?)\n?</conversation-summary>`)
 
 // Compact summarizes everything before the split point. The request reuses

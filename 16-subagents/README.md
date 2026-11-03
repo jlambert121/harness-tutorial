@@ -95,11 +95,13 @@ Provided in `support/`: `cmd/harness` (registers `task` unless `--no-subagents`;
 
 ## Build it
 
+Continue from lesson 15 and copy this lesson’s `tests/` and `support/`. The `internal/subagent/` implementation is new; the harness wiring and demo are supplied. You will also change the existing agent and TUI.
+
 1. **RunContext.** In `Run`, wrap `emit` with a mutex, then `ctx = WithRunContext(ctx, …)` before anything uses `ctx`. Run `go test -race ./internal/agent` after.
 2. **Definitions.** Test: `go test ./internal/subagent -run TestLoadDefs`.
 3. **The task tool.** Tests: `-run 'TestSubagentIsolated|TestUnknownAgent'`. Filter the parent registry with `Registry.Get`. Take the child's answer from the last assistant message of its history.
-4. **Parallelism and usage.** Tests: `-run 'TestParallel|TestChildUsage'`.
-5. **TUI cell.** Test: `go test ./internal/ui/tui -run TestSubagentCell`.
+4. **Parallelism and usage.** Run independent children concurrently and include their usage in the parent’s accounting. Tests: `-run 'TestParallel|TestChildUsage'`.
+5. **TUI cell.** Show each child’s progress separately as its events arrive. Test: `go test ./internal/ui/tui -run TestSubagentCell`.
 
 ## Run it
 
@@ -132,9 +134,8 @@ What it shows:
 
 ## Exercises
 
-1. Make the parent Sonnet 5.5 and keep `explore` on Haiku. Compare total cost against inline Sonnet. Is research on the cheaper model enough to offset the duplication?
-2. Add `task_id` to resume a child (opencode): keep finished children in a map and let a later `task` call continue one with a follow-up prompt.
-3. Give children a token budget: stop a child at `max_input_tokens` and return its partial findings marked as incomplete.
+1. Make the parent Sonnet 5.5 and keep `explore` on Haiku. Compare cost and answer quality against inline Sonnet. When is the extra context and delegation cost worthwhile?
+2. Give children a token budget and return partial findings when it is reached. How does the parent handle incomplete research?
 
 ## Further reading
 

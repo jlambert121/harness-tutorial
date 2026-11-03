@@ -78,13 +78,15 @@ Provided in `support/`: `internal/prompt/templates/{base,anthropic,gpt}.md` (loa
 
 ## Build it
 
+Continue from lesson 05 and copy this lesson’s `tests/` and `support/`. The `internal/prompt/` implementation is new; the prompt templates and commands are supplied. You will also change the existing agent.
+
 1. **Read the templates.** About 440 tokens each. Decide what you'd cut. Every sentence is paid for on every request.
 2. **`Discover`.** Tests: `go test ./internal/prompt -run TestDiscover`.
    - Find the git root by walking up for `.git`, which can be a directory or, in worktrees, a file. Build the directory chain root→cwd.
    - Truncate on a rune boundary (`strings.ToValidUTF8`) and mark the cut.
    - A whitespace-only `AGENTS.override.md` falls through to the next file, as in Codex.
-3. **`Build`.** Tests: `-run 'TestPrompt|TestModel|TestContext|TestSections|TestEstimate'`. Section tokens use `EstimateTokens`. Tool sections count name + description + schema.
-4. **Agent context.** Test: `go test ./internal/agent -run TestContextPrepended`. Only when `len(history) == 0`.
+3. **`Build`.** Assemble stable system instructions separately from project-specific context so the agent receives both. Tests: `-run 'TestPrompt|TestModel|TestContext|TestSections|TestEstimate'`. Section tokens use `EstimateTokens`. Tool sections count name + description + schema.
+4. **Agent context.** Prepend project context to the first user message, so it enters history once. Test: `go test ./internal/agent -run TestContextPrepended`. Only when `len(history) == 0`.
 
 ## Run it
 
@@ -147,9 +149,8 @@ Cost: about $0.035 per run with Sonnet, about $0.002 with Haiku.
 
 ## Exercises
 
-1. Cut `anthropic.md` to under 150 tokens. Keep that version for lesson 07 and compare pass rates.
-2. Load nested `AGENTS.md` lazily, as opencode does. When `read` opens a file in a directory with an instruction file that isn't loaded yet, attach it to the tool result inside `<system-reminder>`.
-3. Support `@path` imports in instruction files (Claude Code: relative to the importing file, depth ≤ 4, skip imports inside code spans).
+1. Cut `anthropic.md` to under 150 tokens, then use lesson 07’s eval runner to compare it with the original. Which instructions can you remove without changing the measured result?
+2. Load nested `AGENTS.md` files when `read` touches their directories. Compare the context sent with eager loading: what information is available before the first file read?
 
 ## Further reading
 

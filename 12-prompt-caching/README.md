@@ -112,8 +112,10 @@ Provided in `support/`:
 
 ## Build it
 
+Continue from lesson 11 and copy this lesson’s `tests/` and `support/`. Work in the existing `internal/llm`, `internal/ctxmgr`, agent, and TUI code; the harness wiring and cache demo are supplied.
+
 1. **Markers.** Tests: `go test ./internal/llm -run 'TestManualCache|TestCacheOff'`. Add a `CacheControl *cacheControl` field (`json:"cache_control,omitempty"`) to the text-part wire type. After building wire messages, walk backward and mark two user/tool messages.
-2. **Agent.** Tests: `go test ./internal/agent -run 'TestCacheOptions|TestRemind'`.
+2. **Agent.** Pass caching settings to each request and queue reminders in the next user message, keeping the system prefix stable. Tests: `go test ./internal/agent -run 'TestCacheOptions|TestRemind'`.
 3. **Stable pruning.** Tests: `go test ./internal/ctxmgr -run 'TestClearBefore|TestManagerKeepsPrefix'`.
    - In `Transform`: when over the threshold, compute `Boundary`. Move `m.boundary` only if `ClearBefore(msgs[m.boundary:b])` would clear ≥ `MinClear`.
    - Always apply `ClearBefore(msgs, m.boundary)`, so earlier prunes persist. If the history shrinks below the boundary (after compaction), reset it.
@@ -153,9 +155,8 @@ Costs above are inference cost (`usage.cost`). The account's flat $0.0002 per-re
 
 ## Exercises
 
-1. Add a fourth breakpoint after the tool definitions, so the tools are cached even when the system prompt is short. Does the minimum cacheable length (512–4096 tokens depending on the model, per Anthropic's docs) get in the way for small sessions?
-2. Make `/model` switch models mid-session, and measure the cache-write cost of the first request on the new model. Then implement Claude Code's alternative: delegate to a subagent (lesson 16).
-3. Track `cache_read / input` per request in traces and alert (an error event) when a session's rate drops below 50% after the third request.
+1. After lesson 14 adds `/model`, measure the cost and cache-read share before and after switching models mid-session. Why does a stable conversation prefix not guarantee a hit on the new model?
+2. Track `cache_read / input` per request in traces. Introduce a changing system-prompt prefix and find where cache reuse drops.
 
 ## Further reading
 

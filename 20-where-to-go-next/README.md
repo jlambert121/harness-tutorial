@@ -69,7 +69,7 @@ Claude Code is closed source. Its documentation at https://code.claude.com/docs 
 3. **Add LSP.** Start `gopls` as a subprocess and send `textDocument/didChange` after each edit. Attach ERROR diagnostics to the edit result, then measure the effect with lesson 17's hooklab.
 4. **Split client and server.** Serve events over SSE and approvals over HTTP. Then build a second front end, such as a web page or an editor extension, against the same core.
 5. **Work in parallel safely.** Give each subagent a git worktree (`git worktree add`) and merge their diffs, the way Claude Code's `isolation: worktree` does.
-6. **Do the exercises you skipped.** Several of them (lesson 04's re-indentation, lesson 18's stable deferred tools (exercise 2), MCP `2026-07-28` (lesson 18, exercise 3)) are improvements the real harnesses made after finding the same problems you found here.
+6. **Try an optional exercise.** Re-indentation (lesson 04) and cache-stable deferred tools (lesson 18) let you explore tradeoffs you saw in the demos.
 
 ## Further reading
 

@@ -12,22 +12,6 @@ import (
 	"harness/internal/route"
 )
 
-func TestResolvePrecedence(t *testing.T) {
-	t.Setenv("HARNESS_TEST_MODEL", "from-env")
-	if got := route.Resolve("from-flag", "HARNESS_TEST_MODEL", "from-config", "default"); got != "from-flag" {
-		t.Errorf("flag should win: %s", got)
-	}
-	if got := route.Resolve("", "HARNESS_TEST_MODEL", "from-config", "default"); got != "from-env" {
-		t.Errorf("env next: %s", got)
-	}
-	if got := route.Resolve("", "HARNESS_UNSET_VAR", "from-config", "default"); got != "from-config" {
-		t.Errorf("config next: %s", got)
-	}
-	if got := route.Resolve("", "HARNESS_UNSET_VAR", "", "default"); got != "default" {
-		t.Errorf("default last: %s", got)
-	}
-}
-
 func assistant(model string, blocks ...llm.Block) llm.Message {
 	return llm.Message{Role: llm.RoleAssistant, Model: model, Blocks: blocks, Stop: llm.StopToolUse}
 }

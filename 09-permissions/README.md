@@ -125,14 +125,16 @@ Provided in `support/`: `cmd/harness`, `internal/ui/repl` (approver prompt; typi
 
 ## Build it
 
-1. **Rules and modes.** Tests: `go test ./internal/permission -run 'TestParse|TestMatch|TestDeny|TestAsk|TestMode|TestYolo|TestReadOnly'`.
+Continue from lesson 08 and copy this lesson’s `tests/` and `support/`. The `internal/permission/` implementation is new; the REPL and harness command are supplied. You will also change existing tools and TUI code.
+
+1. **Rules and modes.** Decide whether a requested tool action is allowed, denied, or needs user approval. Tests: `go test ./internal/permission -run 'TestParse|TestMatch|TestDeny|TestAsk|TestMode|TestYolo|TestReadOnly'`.
    - For bash, a pattern is a regex in which only `*` is special (`regexp.QuoteMeta`, then `\*` becomes `.*`). For paths, reuse the `**` segment matcher from lesson 03.
 2. **Shell parsing.** Tests: `-run 'TestSplit|TestWrapper|TestBare|TestRedirect|TestDynamic|TestShellDashC|TestUnparseable'`.
    - Use `syntax.NewParser().Parse` and `syntax.Walk`. A `*syntax.CallExpr` is a simple command. `Stmt.Redirs` with output operators are writes. `*syntax.CmdSubst` makes the command dynamic.
    - A word is literal only if every part is `Lit`, `SglQuoted`, or `DblQuoted` containing only `Lit`.
    - A wrapper with nothing after it (`env`) is itself the command.
 3. **Checker.** Tests: `-run 'TestChecker|TestRemember|TestArity|TestDynamicAlways|TestNoApprover|TestDoomLoop'`. Only the pending parts go to the approver. "Always" adds `allow bash(Arity(part))` to the session rules.
-4. **Sandbox.** Tests: `-run TestSandbox`. Generate the profile from the template above, then exec `/usr/bin/sandbox-exec -p <policy> -D… -- argv`.
+4. **Sandbox.** Restrict what an approved shell command can do at the OS level. Tests: `-run TestSandbox`. Generate the profile from the template above, then exec `/usr/bin/sandbox-exec -p <policy> -D… -- argv`.
 5. **Wire into tools.** Tests: `go test ./internal/tools -run 'TestPlan|TestDefaultMode|TestBashDeny|TestReadingDotEnv|TestRedirectAsks|TestRepeated|TestBashSandbox'`. `bash_test.go` drops the old `Confirm` test.
 6. **Update the TUI** as described in the contract, then run the whole suite.
 
@@ -186,10 +188,8 @@ The lesson 07 eval passed in a macOS smoke run with yolo mode and the sandbox en
 
 ## Exercises
 
-1. **Structured permission events.** Emit `permission_request` / `permission_reply` events so traces and the TUI show every decision. (The permission package can't import `agent`; add a callback on `Checker`.)
-2. **Linux.** Implement `Sandbox.Wrap` with `bwrap --ro-bind / / --bind <root> <root> --tmpfs /tmp --unshare-net --die-with-parent`.
-3. **Read restrictions.** Add `Readable []string` and replace `(allow file-read*)` with per-path rules. Which system paths does `go test` need to read?
-4. **Auto mode.** Classify each `ask` request with a small model ("is this command consistent with the user's request?") and auto-approve only confident "yes" answers. Measure false approvals on the red-team cases.
+1. **Permission events.** Emit permission request and reply events. Use a trace to explain which decisions were automatic and which required a user.
+2. **Auto mode.** Have a small model classify `ask` requests, then compare its decisions with the red-team cases. Which false approvals and unnecessary prompts does it produce?
 
 ## Further reading
 

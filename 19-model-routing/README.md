@@ -5,7 +5,7 @@
 Model choice as a harness decision, not just a flag:
 
 - **Roles.** A main model (`--model`) and a small model (`--small-model`). The small model already runs lesson 16's explore subagent; now it also names sessions in the background.
-- **`internal/route`.** Precedence for model settings (`Resolve`), a history transform for switching models mid-session (`TransformForModel`), two routers (`Heuristic`, `Escalating`), and the title job (`Title`).
+- **`internal/route`.** A history transform for switching models mid-session (`TransformForModel`), two routers (`Heuristic`, `Escalating`), and the title job (`Title`).
 - **Agent hooks.** `Config.PickModel(step, history)` chooses the model before every request, `Config.PrepareForModel` adapts the history to that model, and `Config.Fallbacks` asks the gateway to try other models if the main one fails. A `model_change` event records every switch.
 - **`--router none|heuristic|escalate`** and `--fallback` in `cmd/harness`. `/model` (from lesson 14) now pins the model: a manual choice outranks the router.
 
@@ -46,7 +46,6 @@ each step of a run:
   request{model, msgs, Fallbacks}     → providerOptions.gateway.models
 ```
 
-- **Precedence.** `Resolve(flag, envKey, config, def)` returns the first non-empty value, Claude Code's order. `cmd/harness` still uses flags with environment defaults (`HARNESS_MODEL`, `HARNESS_SMALL_MODEL`); `Resolve` is there for a config file (exercise 1).
 - **Titles.** After the first prompt of an interactive session, a goroutine asks the small model for a title of at most 6 words (30 output tokens) and appends a `session_info` entry. Headless `exec` skips it, or every eval run would pay for one more request.
 - **`TransformForModel` runs on every request, not only after a switch.** It is deterministic, so with one model the prefix stays byte-identical and cached. It:
   - drops thinking blocks from assistant messages whose `Model` differs from the target;
@@ -64,7 +63,6 @@ each step of a run:
 `harness/internal/route`:
 
 ```go
-func Resolve(flag, envKey, config, def string) string
 func TransformForModel(msgs []llm.Message, target string) []llm.Message
 type Router interface{ Pick(step int, history []llm.Message) string }
 type Heuristic struct{ Small, Main string /* + unexported state */ }
@@ -92,13 +90,14 @@ const ModelChange EventKind = "model_change" // Data: from, to
 
 ## Build it
 
+Continue from lesson 18 and copy this lesson’s `tests/` and `support/`. The `internal/route/` implementation is new; the harness wiring and routing demo are supplied. You will also change the existing LLM and agent code.
+
 1. **Fallbacks on the wire.** Test: `go test ./internal/llm -run TestFallbackModels`. Merge `models` into the existing `providerOptions.gateway` object (caching and session options live there too).
-2. **`Resolve`.** Test: `go test ./internal/route -run TestResolvePrecedence`.
-3. **`TransformForModel`.** Tests: `-run TestTransform`. Copy each message's block slice before filtering it, or you'll edit the agent's history in place. Keep one ID map for the whole call so a call and its result get the same new ID.
-4. **Routers.** Tests: `-run 'TestEscalatingRouterNeverDowngrades|TestHeuristicRouter'`. The solution guards their state with a mutex.
-5. **`Title`.** Test: `-run TestTitleUsesSmallModel`.
-6. **The agent hook.** Test: `go test ./internal/agent -run TestPickModelPerStep`. Pick before building the request, after the compaction check, and emit `ModelChange` only when the model actually changes.
-7. **Wire it up.** Copy `support/cmd/harness`. Test: `go test ./cmd/harness -run TestModelCommandOverridesRouter`.
+2. **`TransformForModel`.** Tests: `-run TestTransform`. Copy each message's block slice before filtering it, or you'll edit the agent's history in place. Keep one ID map for the whole call so a call and its result get the same new ID.
+3. **Routers.** Choose a model for each run or escalate after failed tool calls. Tests: `-run 'TestEscalatingRouterNeverDowngrades|TestHeuristicRouter'`. The solution guards their state with a mutex.
+4. **`Title`.** Use the small model for a background session title, illustrating model choice by role. Test: `-run TestTitleUsesSmallModel`.
+5. **The agent hook.** Test: `go test ./internal/agent -run TestPickModelPerStep`. Pick before building the request, after the compaction check, and emit `ModelChange` only when the model actually changes.
+6. **Wire it up.** Copy `support/cmd/harness`. Test: `go test ./cmd/harness -run TestModelCommandOverridesRouter`.
 
 ## Run it
 
@@ -146,11 +145,9 @@ What it shows:
 
 ## Exercises
 
-1. Wire `Resolve` into `cmd/harness` with a config file (`.harness/config.json` with `model` and `small_model`), so the order is flag > environment > config > default. Test the order end to end.
-2. Make escalation cache-aware, as Cursor's router is: before switching, estimate the cost of rewriting the prefix on the main model (lesson 12 prices and the current context size) and put it in the `model_change` event. Report the total switching cost in routelab.
-3. Add an `opusplan`-style role: plan mode (lesson 09) runs on the main model, execution on the small one. Measure it with routelab against `fixed strong`.
-4. Replace the keyword list with a classifier: at step 1, ask the small model "easy or hard?" with the prompt. Compare it with `Heuristic` on pass rate, cost and added latency.
-5. Turn on reasoning and compare the two answers to signed thinking after an escalation: drop it (`TransformForModel`) or refuse to switch once it exists (UncommonRoute's fix). Which tasks change?
+1. Estimate the cost of rewriting the prefix before escalating to the main model. Compare the estimate with the observed switching cost in routelab.
+2. Replace the keyword router with a classifier and compare pass rate, cost, and latency. Does an extra classification call pay for itself?
+3. After a model switch with signed thinking, compare dropping that thinking with refusing to switch. What context does each policy preserve?
 
 ## Further reading
 

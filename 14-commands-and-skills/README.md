@@ -85,10 +85,12 @@ The lesson directory also has `sample/.harness/`: 12 skills and a `/review` temp
 
 ## Build it
 
+Continue from lesson 13 and copy this lesson’s `tests/` and `support/`. The `internal/commands/` implementation is new; the REPL, harness wiring, and sample skills are supplied. You will also change the existing agent and TUI.
+
 1. **Parse and Expand.** Tests: `go test ./internal/commands -run 'TestParse|TestExpand'`. A regexp per substitution works; run the shell substitution first so a failure stops before anything else.
 2. **Templates.** Test: `-run 'TestLoadTemplates|TestTemplateCommand'`. A minimal frontmatter parser (`key: value` lines between `---` markers) is enough.
-3. **Registry.** Test: `-run TestRegistry`.
-4. **Skills.** Test: `-run TestSkills`. The tool's result wraps the body in `<skill name=… path=…>` and lists the other files in the skill directory.
+3. **Registry.** Look up user commands separately from prompts sent to the model. Test: `-run TestRegistry`.
+4. **Skills.** Put only skill metadata in context, then let the model load the full instructions when needed. Test: `-run TestSkills`. The tool's result wraps the body in `<skill name=… path=…>` and lists the other files in the skill directory.
 5. **Agent model switch.** Test: `go test ./internal/agent -run TestSetModel`. Guard the model with the agent's mutex; `/model` can run while the TUI is idle but the agent goroutine is still finishing up.
 6. **TUI.** Test: `go test ./internal/ui/tui -run TestPalette`. The test types `/co` through real key events and then presses Tab.
 
@@ -136,9 +138,8 @@ The cost of a skill call is one extra round trip. The saving is thousands of tok
 
 ## Exercises
 
-1. Support `disable-model-invocation: true` (the skill is listed only as a command, never in `<available_skills>`) and `allowed-tools` (the run restricts tools while the skill is active).
-2. Add `/init`, which asks the model to write an `AGENTS.md` for the repository (opencode and Codex both ship one). Then run lesson 07's task 10 with and without it.
-3. Make the palette show `ArgumentHint`, and complete template arguments from file names.
+1. Support a skill that can be invoked by the user but is not listed for the model. Compare what enters context and who can choose to load it.
+2. Add `/init` to ask the model to write an `AGENTS.md`, then run lesson 07’s instruction-following task with and without it. Does the generated guidance improve the result?
 
 ## Further reading
 

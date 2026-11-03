@@ -79,9 +79,11 @@ Provided in `support/`: `cmd/harness` (registers the tool, appends guidance + re
 
 ## Build it
 
+Continue from lesson 14 and copy this lesson’s `tests/` and `support/`. The `internal/memory/` implementation is new; the harness wiring and demo are supplied.
+
 1. **Paths.** Test: `go test ./internal/memory -run TestPathTraversal`. Reject anything that isn't a plain file name before touching the filesystem.
 2. **CRUD and index.** Tests: `-run 'TestMemoryToolCRUD|TestIndex|TestCreate|TestView'`. Write `reindex()`: glob `*.md`, skip `MEMORY.md`, parse frontmatter, write one line per memory, sorted.
-3. **Recall.** Test: `-run TestRecall`. Cut at lines first, then bytes on a rune boundary, and say so.
+3. **Recall.** Bound the index added to a new session’s context and indicate when it was truncated. Test: `-run TestRecall`. Cut at lines first, then bytes on a rune boundary, and say so.
 
 ## Run it
 
@@ -129,9 +131,8 @@ What it shows:
 
 ## Exercises
 
-1. **Staleness.** Add a `modified` timestamp to each memory (Claude Code does) and show memories older than 30 days with a "may be stale" marker in recall.
-2. **Extraction instead of in-session writes.** At session end, send the transcript (lesson 13's `Serialize`) to a small model with Codex's "No-op is allowed and preferred" instruction, and let it propose memories. Compare quality and cost with the in-session tool.
-3. **Limits.** Return an error from `create` when the index would exceed 200 lines, asking the model to merge memories and shorten the index. Claude Code reminds the model near its limit and, once over, returns an error asking it to rewrite the index.
+1. **Staleness.** Mark older memories as potentially stale. Compare the model’s behavior when a saved preference conflicts with current project instructions.
+2. **Extraction.** After a session, ask a small model to propose memories from the transcript. Compare what it saves and costs with the in-session memory tool.
 
 ## Further reading
 

@@ -113,7 +113,9 @@ Provided in `support/`:
 
 ## Build it
 
-1. **`LoadSuite`.** Test: `go test ./internal/eval -run TestLoadSuite`.
+Continue from lesson 06 and copy this lesson’s `tests/` and `support/`. The `internal/eval/` implementation is new; the headless command, report code, and evaluation tasks are supplied.
+
+1. **`LoadSuite`.** Discover the tasks the harness will attempt before their checks are revealed. Test: `go test ./internal/eval -run TestLoadSuite`.
 2. **`Run`.** Tests: `-run 'TestRunHides|TestRunRecords|TestRunTimeout'`. The test harness is `testdata/fake-harness.sh`: it fails if it can see `check.sh`, so you can't accidentally copy the checks in early.
    - Use `exec.CommandContext` with `SysProcAttr{Setpgid: true}`, `cmd.Cancel` killing `-pgid`, and `cmd.WaitDelay`. `TestRunTimeout` runs a script that does `sleep 30`. The default `Cancel` kills only `sh`; its `sleep` child keeps the stdout pipe open, so `Wait` returns when `WaitDelay` (2 s) expires, or after 30 s without `WaitDelay`. With the group kill the test takes about 0.3 s. Lesson 05 fixed the same bug in the bash tool.
    - Parse stdout line by line into `agent.Event` while the process runs.
@@ -168,9 +170,8 @@ What it shows:
 
 ## Exercises
 
-1. Add a task your favorite model fails at least once in three runs. Write `solution/` first, and confirm `TestReferenceSolutionsPass` sees the starting repo fail.
-2. Add `--prompt-variant` to `harness exec` and use evalrun to compare `anthropic.md` with your trimmed prompt from lesson 06, exercise 1.
-3. Report a 95% confidence interval for each config's pass rate (Wilson score interval on passes/runs) instead of ±SD.
+1. Add a task your model fails at least once in three runs. Write the reference solution first, and confirm the starting repo fails its hidden check. What behavior does the task measure?
+2. Compare the original prompt with a shorter variant (such as the one proposed in lesson 06). Change the template and rebuild the harness for each run. Run repeated evaluations and inspect failures before attributing any difference to the prompt.
 
 ## Further reading
 

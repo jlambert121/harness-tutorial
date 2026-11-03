@@ -52,7 +52,7 @@ keys ─▶ Update(KeyPressMsg) ── Enter idle ──▶ go agent.Run(ctx, te
 - **Confirmation crosses the boundary twice.** The bash tool calls `Env.Confirm`, which sends a `confirmMsg` with a reply channel and blocks. The UI shows the dialog, and a key press writes the answer to the channel. Cancelling the run unblocks it. This is the shape Codex uses for approvals and lesson 09 reuses for permissions.
 - **Cells, not raw text.** Events fold into cells: user, assistant (text deltas append to the current cell), thinking, tool (header filled at `tool_start`, result attached at `tool_end` by call ID), info, error. Rendering cells at the current width means a resize simply re-wraps.
 - **Context in the status bar is the last request's input tokens.** That's what the model actually saw, not a running total. Lesson 11 turns it into a budget meter.
-- **No markdown rendering.** It adds a dependency and per-delta re-parsing of a growing document. Plain wrapped text is enough to learn from. Exercise 2 adds it.
+- **No markdown rendering.** It adds a dependency and per-delta re-parsing of a growing document. Plain wrapped text is enough to learn from.
 - **The REPL stays.** `--ui repl` (or a non-TTY stdout) uses it, and `exec` mode (lesson 07) still uses the REPL renderer.
 
 ## The contract
@@ -90,6 +90,8 @@ Provided in `support/`: `cmd/harness` (`--ui tui|repl`; TUI is the default on a 
 
 ## Build it
 
+Continue from lesson 07 and copy this lesson’s `tests/` and `support/`. The `internal/ui/tui/` implementation is new; the updated harness command and replay command are supplied. You will also change the existing agent.
+
 1. **Steering.** Tests: `go test ./internal/agent -run TestSteer`.
    - Add a mutex-protected queue to `Agent`. Write `injectSteers` to drain the queue into history and emit `Steer` events.
    - Call it after appending tool results (unless cancelled). Also call it when the model answers without tools: if anything was queued, `continue` the loop instead of returning.
@@ -99,7 +101,7 @@ Provided in `support/`: `cmd/harness` (`--ui tui|repl`; TUI is the default on a 
    - A `viewport` for the transcript with height `h-3`, then one status line, then a `textinput`.
    - On every update, re-render the cells and keep the view pinned to the bottom if it was already there. Scrolling up to read must not snap back.
    - Wrap each cell with `lipgloss.NewStyle().Width(w)`. Test: `TestWindowResizeRewraps`.
-4. **Status bar.** Test: `TestStatusBar`.
+4. **Status bar.** Show the latest request’s context use and the session cost from agent events. Test: `TestStatusBar`.
 5. **Live wiring.** In `start`, launch `agent.Run` in a goroutine with a sink that calls `send(EventMsg{e})`, and send `runDoneMsg` when it returns. Write `Confirm` with a reply channel and a `select` on `ctx.Done()`.
 6. **Keys.** In confirm mode, `y` approves; anything else denies. Ctrl-C cancels a running agent, or quits when idle. Esc cancels. PgUp and PgDn scroll.
 
@@ -166,9 +168,8 @@ Cost: replay is free.
 
 ## Exercises
 
-1. **Follow-ups distinct from steering.** Add `Agent.FollowUp(msg)`, delivered only when the agent would stop, and bind it to Alt-Enter.
-2. **Markdown.** Render assistant cells with `glamour` at `message_end`, and stay plain while streaming. Measure render time on a long answer.
-3. **Client/server split.** Serve events over SSE from `harness serve` and make the TUI connect over HTTP, as opencode does. What breaks in `Confirm`?
+1. **Follow-ups versus steering.** Queue a follow-up until the agent would otherwise stop. Compare its event order and effect with steering during a tool batch.
+2. **Client/server split.** Send events over SSE to a separate UI. How must confirmation requests and replies cross the process boundary?
 
 ## Further reading
 

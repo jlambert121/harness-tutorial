@@ -116,6 +116,8 @@ Provided in `support/`:
 
 ## Build it
 
+Continue from lesson 09 and copy this lesson’s `tests/` and `support/`. The `internal/session/` implementation is new; the session commands and REPL changes are supplied. You will also change the existing agent.
+
 1. **Store.** Tests: `go test ./internal/session -run 'TestAppend|TestTorn|TestBranch|TestEntries|TestLatest|TestDirFor'`.
    - Keep `[]Entry` plus `map[id]index`.
    - For `Open`, scan line by line and stop at the first line that doesn't parse. Then `os.Truncate` to the last good byte and reopen with `O_APPEND`.
@@ -123,8 +125,8 @@ Provided in `support/`:
 3. **Snapshots.** Tests: `-run TestSnapshot`.
    - `git init --bare <dir>` takes no `--work-tree`. Every other command uses both `--git-dir` and `--work-tree`.
    - In tests, isolate git from your global config (`GIT_CONFIG_GLOBAL=/dev/null`). A developer with `commit.gpgsign=true` otherwise has the test hang waiting for a passphrase. That happened here.
-4. **Agent hooks.** Tests: `go test ./internal/agent -run 'TestPersist|TestLoad'`.
-5. **Permission tweak.** Test: `go test ./internal/permission -run TestYoloAllowsDynamic`.
+4. **Agent hooks.** Persist each history addition and reload it on resume, so the model continues with the conversation it actually had. Tests: `go test ./internal/agent -run 'TestPersist|TestLoad'`.
+5. **Permission tweak.** Keep yolo mode consistent for dynamic commands in headless runs. This behavior is already backported to lesson 09; verify it with `go test ./internal/permission -run TestYoloAllowsDynamic`.
 
 ## Run it
 
@@ -182,9 +184,8 @@ Ties to earlier lessons:
 
 ## Exercises
 
-1. **`/tree` navigation.** List leaves with their last message and let the user `Branch` to any entry. pi also offers summarizing the branch you leave (`branch_summary`); try having a small model write one.
-2. **Per-step snapshots.** Snapshot at every `TurnStart` and add `/undo N`. How large does the shadow repo get on a long session? (`git count-objects -vH`)
-3. **Fork.** `/fork <entry>` copies the path to that entry into a new session file, as pi does.
+1. **Tree navigation.** Let the user branch to an earlier session entry. After branching, compare the visible conversation with the preserved log.
+2. **Per-step snapshots.** Snapshot at every `TurnStart` and compare undo precision and shadow-repository size with the per-prompt approach.
 
 ## Further reading
 

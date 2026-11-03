@@ -125,6 +125,8 @@ Provided in `support/`: `internal/ui/repl` (renders events), `internal/trace` (J
 
 ## Build it
 
+Continue from lesson 01 and copy this lesson’s `tests/` and `support/`. The `internal/tools/` and `internal/agent/` implementation packages are new; the REPL and trace code are supplied.
+
 1. **Registry.** Tests: `go test ./internal/tools`.
    - `Specs()` sorts by name. Go map iteration is random, and an unstable tool order changes the request prefix and defeats prompt caching (lesson 12). Codex once shipped exactly this bug, with MCP tools.
    - `Execute` returns results in call order. An unknown tool gets an error result that **lists the available tools**. An error the model can act on beats one it has to guess about.
@@ -184,9 +186,8 @@ The HTML version shows the same timeline with hover details. Cost: under $0.001.
 
 ## Exercises
 
-1. **Doom-loop detection.** If the model makes the same call (same name and identical args) three times in a row, return an error result telling it to change approach. Write the test with the fake first.
-2. **Steering.** Add `Agent.Steer(msg string)`. It queues a user message that is injected after the current tool batch, as pi does. Lesson 08 needs this for the TUI; try it now.
-3. Print cumulative input tokens per step. How many steps until the re-sent history costs more than the first request did?
+1. Use a trace to compare input tokens on successive model calls. How does re-sending the growing history affect the cost of a multi-step run?
+2. Try detecting three identical consecutive tool calls and returning an error asking the model to change approach. Does the model recover? Lesson 09 implements a related check.
 
 ## Further reading
 

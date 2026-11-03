@@ -58,7 +58,7 @@ The harness reads fd 3 to learn the final directory. The command's own output is
 
 ### No background processes, on purpose
 
-Any child still alive when the shell exits is killed with the group. That keeps the harness from leaking processes, but the agent can't start a dev server and then curl it in a later call. Exercise 2 adds Claude Code-style background jobs. The tool description tells the model about this limit. A model that knows a constraint works around it; a model that doesn't keeps retrying.
+Any child still alive when the shell exits is killed with the group. That keeps the harness from leaking processes, but the agent can't start a dev server and then curl it in a later call. The optional background-jobs exercise explores another design. The tool description tells the model about this limit. A model that knows a constraint works around it; a model that doesn't keeps retrying.
 
 ### Output: what the model sees
 
@@ -91,14 +91,13 @@ func Bash() Tool   // "bash": {command, timeout_ms?, workdir?}; Result.Details i
 
 `harness/internal/agent`: add `func (a *Agent) Tools() *tools.Registry`. The REPL uses it to install `Confirm`.
 
-Provided in `support/`: `internal/ui/repl` (with the confirm prompt), `cmd/harness` (registers `bash`), `cmd/shelltorture`.
+Provided in `support/`: `internal/tools/headtail.go` (bounded output buffer), `internal/ui/repl` (with the confirm prompt), `cmd/harness` (registers `bash`), `cmd/shelltorture`.
 
 ## Build it
 
-1. **`HeadTail`.** Test: `go test ./internal/tools -run TestHeadTail`.
-   - Fill `head` up to `limit/2`. After that, write into a ring buffer of `limit - limit/2` bytes, counting each overwritten byte as dropped.
-   - Copy in chunks, not byte by byte: 50 MB through a per-byte loop is noticeably slow.
-   - In `String()`, trim a partial rune at the end of the head and at the start of the tail.
+Continue from lesson 04 and copy this lesson’s `tests/` and `support/`. Work in your existing `internal/tools/` and `internal/agent/` packages; the REPL and demo programs are supplied.
+
+1. **Inspect the supplied `HeadTail` buffer.** It keeps the beginning and end of command output within a fixed memory limit. Use it in the bash tool below; the shell torture demo shows what the model retains and how much was dropped.
 
 2. **Run and wait.** Tests: `-run 'TestBashExit|TestBashSuccess|TestBashRunsIn|TestBashStdin'`.
    - `exec.Command("/bin/bash", "-c", script)` with `SysProcAttr{Setpgid: true}`, `Dir`, extra env vars, and `Stdout = Stderr = headTail`. The PID is also the process group ID.
@@ -156,9 +155,8 @@ This ties back to lesson 02's cancellation contract. Ctrl-C now reaches the subp
 
 ## Exercises
 
-1. **Stream output to the UI.** Give `Tool.Run` a progress callback (pi's `onUpdate`; opencode's `ctx.metadata()`), and emit `tool_update` events with the latest output lines while a command runs.
-2. **Background jobs.** Add `run_in_background: true`: start the command, return a job ID immediately, keep it in a table on `Env`, and add `bash_output {job_id}` and `bash_kill {job_id}` tools. Kill all jobs when the agent exits.
-3. **Codex-style yield.** Instead of a hard timeout, return after `yield_time_ms` with partial output and a session ID, and let the model call `write_stdin`.
+1. **Stream output to the UI.** Emit `tool_update` events while a command runs. How does live feedback change cancellation and event ordering?
+2. **Background jobs.** Return a job ID for a long-running process and add tools to read output and stop it. Compare that lifecycle with the current timeout-and-kill behavior.
 
 ## Further reading
 
