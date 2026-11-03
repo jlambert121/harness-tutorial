@@ -64,7 +64,7 @@ data: [DONE]
 What the accumulator must handle:
 
 - **Tool calls arrive in pieces, keyed by `index`.** The first fragment carries `id` and `name`; later ones carry only argument text. With parallel calls, fragments of call 0 and call 1 can interleave, so key by `index` and never assume order.
-- **`finish_reason` and `usage` arrive in the same final chunk.**
+- **`finish_reason` and `usage` arrived in the same final chunk in this probe.** Accept them in separate chunks too; usage can follow the finish reason.
 - **`finish_reason` mapping:** `stop` → `StopEnd`, `tool_calls` → `StopToolUse`, `length` → `StopLength`. Some providers say `stop` even when the message has tool calls (opencode works around this explicitly), so **if there are tool calls, the stop reason is `tool_use`.**
 
 ### Neutral messages

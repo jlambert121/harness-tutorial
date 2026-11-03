@@ -14,7 +14,16 @@ echo "== 1. start a task and kill -9 the harness while its first tool call runs"
 "$H" exec --json --root "$W" --model "$MODEL" \
   "Implement Reverse so the tests pass, then add an IsPalindrome function with table-driven tests." > /tmp/demo-run1.jsonl &
 PID=$!
-until grep -q '"tool_start"' /tmp/demo-run1.jsonl 2>/dev/null; do sleep 0.05; done
+deadline=$((SECONDS + 120))
+until grep -q '"tool_start"' /tmp/demo-run1.jsonl 2>/dev/null; do
+  if ! kill -0 "$PID" 2>/dev/null || (( SECONDS >= deadline )); then
+    kill "$PID" 2>/dev/null || true
+    wait "$PID" 2>/dev/null || true
+    echo "No tool call started; inspect /tmp/demo-run1.jsonl for the result or error." >&2
+    exit 1
+  fi
+  sleep 0.05
+done
 kill -9 $PID; wait $PID 2>/dev/null || true
 echo "killed: $(grep -c '"tool_start"' /tmp/demo-run1.jsonl) tool call(s) started, $(grep -c '"tool_end"' /tmp/demo-run1.jsonl) finished"
 

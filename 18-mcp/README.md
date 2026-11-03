@@ -85,7 +85,7 @@ Provided in `support/`: `cmd/mini-mcp` (with `--synthetic N` filler tools and `-
 
 ## Build it
 
-1. **Transport and handshake.** Test: `go test ./internal/mcp -run TestHandshake`. Start the process with stdin and stdout pipes and launch `readLoop`. `call()` registers a channel under a new id, writes one line, then `select`s on the channel, `dead` and `ctx.Done()`.
+1. **Transport and handshake.** Test: `go test ./internal/mcp -run TestHandshake`. Start the process with stdin and stdout pipes and launch `readLoop`. `call()` registers a channel under a new id, writes one line, then `select`s on the channel, `dead` and `ctx.Done()`. Reject a server's unsupported protocol version before sending `notifications/initialized`; this client supports only `2025-11-25`.
 2. **Tools.** Tests: `-run 'TestHandshakeAndList|TestCall'`. Follow `nextCursor` until it's empty. Join text content parts; mark other kinds as omitted.
 3. **Crash handling.** Test: `-run TestServerCrash`.
 4. **Names.** Test: `-run TestToolName`.
@@ -138,7 +138,7 @@ What it shows:
 ## Exercises
 
 1. Rank `tool_search` results by how many query words match (or BM25 over name + description) and return the top 5 even when not every word matches. Rerun the live demo.
-2. Keep the prefix stable: declare deferred tools up front as stubs (name plus a one-line description, schema `{"type":"object"}`) and send the full schema only after `tool_search`. Compare cache hit rates (lesson 12) with the current approach.
+2. Explore cache-stable deferral: declare tools up front as stubs and return full schemas through `tool_search` results while keeping the original tool definitions unchanged. Compare cache hit rates (lesson 12) with the current approach. Replacing a stub's schema in the tool list would change the cached prefix.
 3. Implement MCP `2026-07-28`: drop `initialize`, add `_meta` to every request, call `server/discover`, and handle error `-32022` by retrying with a supported version. Make `mini-mcp` support both revisions.
 
 ## Further reading

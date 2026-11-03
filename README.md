@@ -6,7 +6,7 @@ A guided tutorial for building a coding agent harness, the program around a lang
 
 - Go 1.26+
 - A Vercel AI Gateway API key in `AI_GATEWAY_API_KEY`
-- macOS or Linux. The sandbox in lesson 09 is implemented for macOS only; Linux gets a description.
+- macOS or Linux. Lesson 09's sandbox is macOS-only; on Linux, commands run without that sandbox. Use an isolated environment for headless runs.
 - Comfort with Go. The lessons explain harness concepts, not the language.
 
 ## How each lesson works
@@ -19,10 +19,13 @@ NN-lesson-name/
   solution/    reference module as of the end of the lesson
 ```
 
-1. Read `README.md`.
-2. `cp -R NN-*/tests/. NN-*/support/. ~/src/my-harness/`
+1. Read the lesson's `README.md`.
+2. From the tutorial directory, copy that lesson's files into your module, for example:
+   `cp -R 00-orientation/tests/. 00-orientation/support/. ~/src/my-harness/`
 3. Implement until `go test ./...` passes.
 4. Run the demo.
+
+Run the Go commands from your module. In lesson commands, replace `<path-to>` or `<lesson>` with the absolute path to the tutorial or lesson directory. Some demos reuse `/tmp/textkit` or `/tmp/sample`; use a fresh destination when copying a sample, since `cp -R` behaves differently when the destination already exists.
 
 Use `solution/` when stuck. `diff -r` between two consecutive `solution/` directories shows exactly what a lesson adds.
 

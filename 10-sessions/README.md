@@ -19,11 +19,11 @@ The demo does all of this for real and draws the resulting tree.
 | **opencode** | SQLite (`session`, `message`, `part` tables with JSON columns) | linear, plus child sessions for subagents | by session ID; HTTP `fork`/`revert` routes | **git snapshots in a separate bare repo** (`--git-dir … --work-tree …`): `add --all` + `write-tree` at each step, restore with `read-tree` + `checkout-index`; revert is "soft" until the next prompt |
 | **Claude Code** | per-session transcript (on-disk format not covered by the research) | linear, with compaction boundaries | `--continue`, `--resume`, `/resume` | `/rewind` |
 
-All of them share three properties:
+Three useful design principles for our implementation:
 
-1. **Never rewrite, only append.** pi and Codex never delete entries, even across compaction. You can always see what happened.
-2. **The log is the source of truth.** In-memory history is rebuilt from it.
-3. **Undo restores files and conversation together.** Restoring only one leaves the model believing in files that no longer exist. The demo hit exactly this before the fix below.
+1. **Append session entries.** pi and Codex retain earlier entries across compaction.
+2. **Rebuild in-memory history from persisted state.**
+3. **Restore files and conversation together.** Restoring only one leaves the model believing in files that no longer exist. The demo hit exactly this before the fix below.
 
 ## Design for our harness
 
@@ -130,8 +130,8 @@ Provided in `support/`:
 
 ```sh
 HARNESS_DATA_DIR=/tmp/hd go test ./...
-go run ./cmd/harness --root /tmp/textkit           # then Ctrl-D, and:
-go run ./cmd/harness --root /tmp/textkit --continue
+go run ./cmd/harness --root /tmp/textkit --ui repl           # then Ctrl-D, and:
+go run ./cmd/harness --root /tmp/textkit --ui repl --continue
 > /undo
 go run ./cmd/sessions --root /tmp/textkit tree
 ```

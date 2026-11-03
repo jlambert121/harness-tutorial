@@ -71,24 +71,6 @@ Claude Code is closed source. Its documentation at https://code.claude.com/docs 
 5. **Work in parallel safely.** Give each subagent a git worktree (`git worktree add`) and merge their diffs, the way Claude Code's `isolation: worktree` does.
 6. **Do the exercises you skipped.** Several of them (lesson 04's re-indentation, lesson 18's stable deferred tools (exercise 2), MCP `2026-07-28` (lesson 18, exercise 3)) are improvements the real harnesses made after finding the same problems you found here.
 
-## Bugs found while writing this tutorial
-
-Each of these went into the lesson where it was found. They're listed here because each is a mistake real harnesses have also made or guarded against:
-
-- **Lesson 01:** a tool call with no arguments stored an empty `json.RawMessage`, which made the whole message unserializable, so traces and sessions silently dropped it. Found in lesson 18.
-- **Lesson 05:** a background child holding stdout open made `cmd.Wait()` hang until `WaitDelay` was added. `exec.ErrWaitDelay` also hid the real exit code. The same bug came back in lesson 07's eval runner.
-- **Lesson 07:** an agent-written test (`TestSumCancel`) collided with a hidden test of the same name. Hidden tests are now prefixed `TestHidden`.
-- **Lesson 08:** the trace recorder HTML-escaped `<`, `>` and `&` in tool arguments.
-- **Lesson 09:** `.git` was writable through the sandbox's `$TMPDIR` rule whenever the workspace sat under the temp dir. Protected paths must be excluded from *every* writable root. (A separate demo bug: the red-team demo's fake HOME lived under `$TMPDIR`, so the same rule made it writable; it now lives under the user cache dir.) And in yolo mode, "dynamic" commands were denied in headless runs.
-- **Lesson 10:** `/undo` restored files but kept the branch move in memory only, so the next `--continue` resumed the undone conversation.
-- **Lesson 13:** the split point required a user message, so single-prompt runs couldn't compact. Re-attached files could refill a small window.
-- **Lesson 01 (found in review):** jitter could push a retry delay past its 30 s cap.
-- **Lesson 14:** `` !`cmd` `` output went through argument substitution, so a `$1` inside a shell script's text was replaced.
-- **Lesson 15:** `str_replace` could break a memory's frontmatter, which silently dropped it from the index; `MEMORY` and `memory.md` got past the index-file guard.
-- **Lesson 17:** subagents ran their tools without hooks, and a failing hook command was ignored without a word to the model.
-- **Lesson 18:** two deferred MCP servers each registered `tool_search`, and the last one replaced the others.
-- **Lesson 19:** with a router on, `/model` was overridden on the next request.
-
 ## Further reading
 
 - Anthropic, "Effective context engineering for AI agents": https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents

@@ -8,7 +8,7 @@ Before writing code, this lesson covers what a harness is and how the well-known
 
 ## What a harness is
 
-A language model only maps text to text. A coding agent is a model plus the program around it, and that program is the **harness**. It does six jobs:
+A coding agent combines a model with the program around it, the **harness**. The model produces responses; the harness manages the work around them. It does six jobs:
 
 ```
             ┌─────────────────────────────────────────────────────────────┐
@@ -53,31 +53,7 @@ Two things to watch for as you go:
 
 ## Design for our harness
 
-You'll build a Go harness that grows one capability per lesson:
-
-| # | Lesson | You add |
-|---|---|---|
-| 00 | Orientation | module, model catalog |
-| 01 | [Talking to the model](../01-talking-to-the-model/) | HTTP + SSE client, neutral message types, retries, cost |
-| 02 | [The agent loop](../02-the-agent-loop/) | loop, tool protocol, events, cancellation, trace viewer |
-| 03 | [Tool design](../03-tool-design/) | registry, schemas, validation, truncation, parallel execution |
-| 04 | [Editing files](../04-editing-files/) | edit/write tools, match cascade, read-before-edit |
-| 05 | [Running commands](../05-running-commands/) | bash tool, process groups, timeouts, bounded output |
-| 06 | [System prompt](../06-system-prompt/) | prompt assembly, AGENTS.md discovery; first real coding task |
-| 07 | [Evaluation](../07-evaluation/) | headless exec mode, task suite, eval runner |
-| 08 | [Terminal UI](../08-terminal-ui/) | Bubble Tea front-end, steering |
-| 09 | [Permissions](../09-permissions/) | rules, shell parsing, approvals, macOS sandbox |
-| 10 | [Sessions](../10-sessions/) | JSONL sessions, resume, branching, undo |
-| 11 | [Context budget](../11-context-budget/) | token accounting, pruning |
-| 12 | [Prompt caching](../12-prompt-caching/) | cache markers, reminders, cache measurement |
-| 13 | [Compaction](../13-compaction/) | summarization, tail preservation, overflow recovery |
-| 14 | [Commands and skills](../14-commands-and-skills/) | slash commands, templates, skills |
-| 15 | [Memory](../15-memory/) | cross-session memory |
-| 16 | [Subagents](../16-subagents/) | task tool, isolated child agents |
-| 17 | [Hooks](../17-hooks/) | hook events, lint/test feedback loop |
-| 18 | [MCP](../18-mcp/) | MCP client, deferred tools |
-| 19 | [Model routing](../19-model-routing/) | model roles, cross-model history, routers |
-| 20 | [Where to go next](../20-where-to-go-next/) | reading guide to real harness code |
+You'll build a Go harness one capability at a time. See the [lesson index](../README.md#lessons) for the full sequence.
 
 Decisions that apply throughout:
 
@@ -119,7 +95,7 @@ func FetchCatalog(ctx context.Context, baseURL, apiKey string) ([]ModelInfo, err
 1. Install Go 1.26 or newer.
 2. Create your module anywhere outside this tutorial directory:
    ```sh
-   mkdir ~/src/my-harness && cd ~/src/my-harness
+   mkdir -p ~/src/my-harness && cd ~/src/my-harness
    go mod init harness
    ```
    The module path must be `harness`, because the provided tests and support code import `harness/internal/...`.
@@ -127,7 +103,7 @@ func FetchCatalog(ctx context.Context, baseURL, apiKey string) ([]ModelInfo, err
 
 **Every lesson works the same way:**
 1. Read the lesson.
-2. Copy its `tests/` and `support/` into your module: `cp -R <lesson>/tests/. <lesson>/support/. ~/src/my-harness/`.
+2. Copy its `tests/` and `support/` into your module: `cp -R <lesson>/tests/. <lesson>/support/. ~/src/my-harness/`. Replace `<lesson>` with the absolute path to that lesson directory.
 3. Implement the contract until `go test ./...` passes.
 4. Run the demo.
 

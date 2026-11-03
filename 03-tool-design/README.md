@@ -128,7 +128,7 @@ Provided in `support/`: `internal/tools/ignore.go` (`walk`, `matchGlob`, `loadIg
 
 ```sh
 go test -race ./...
-go run ./cmd/harness --root ../02-the-agent-loop/sample
+go run ./cmd/harness --root <path-to>/02-the-agent-loop/sample
 > where is Defaults called and where is Config defined?
 ```
 

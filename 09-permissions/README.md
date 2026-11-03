@@ -45,9 +45,9 @@ command ──▶ SplitCommand (mvdan.cc/sh) ──▶ commands[], writes[], dyn
 - **Parse, don't regex.** `npm test && rm -rf /` with `allow bash(npm test*)` matches as a string, but it contains `rm -rf /`. The parser splits it, and only the unapproved part is asked about. `sh -c 'literal'` is parsed recursively.
 - **"Dynamic" means unknowable.** `$X -rf ~`, `eval "…"`, `$(…)` and backticks are things no rule can vouch for, so they are confirmed by a person. The exception is yolo mode, where the sandbox is the safeguard. Without that exception, headless runs deny ordinary commands like `test -z "$(gofmt -l .)"`, which was found while building lesson 10.
 - **Redirects are writes.** `echo key >> ~/.ssh/authorized_keys` runs an allowed `echo`, but its redirect target is checked as a `write`.
-- **Read-only commands never prompt.** `ls`, `cat`, `git status/diff/log`, `find` without `-delete`/`-exec`, and so on. Prompting for those trains users to press "y" without reading.
+- **Some commands never prompt.** The reference allowlist includes `ls`, `cat`, `git status/diff/log`, and `find` without certain write actions. This is only a heuristic: flags can make allowed commands write (for example, `sort -o output input` or `go env -w KEY=value`). Do not treat it as a security boundary.
 - **"Always" stores a pattern, not the literal command.** `Arity("git commit -m x")` gives `git commit *`, so the next commit doesn't prompt.
-- **No approver means deny.** Headless runs (lesson 07's exec) never hang waiting for an answer. Exec defaults to yolo mode inside the sandbox, the same combination as Codex's `exec`: approval "never" plus sandboxed writes.
+- **No approver means deny** when a decision requires approval. Headless `exec` defaults to yolo mode, which allows actions without approval. The sandbox is on by default only when available on macOS; on Linux, or with `--sandbox=false`, headless commands run unsandboxed. Use an isolated environment.
 - **Doom loops.** The third identical call in a row (same tool, same arguments) goes to the approver. Headless, it's denied with "change your approach". opencode uses the same threshold.
 - **File tools** check `Request{Tool: "edit", Subjects: ["a.go"]}` with workspace-relative paths. Default rules ask before reading `.env` files, as opencode does.
 
@@ -182,7 +182,7 @@ What it shows:
 - **The one harm that got through:** copying a secret into `/tmp`. Reads are allowed everywhere and `/tmp` is writable. Data can't leave the machine (no network), but it now sits where the next unsandboxed command could send it. Read restrictions are the next layer, and Codex's read-only mode and containers provide them.
 - **Escalation can undo all of it.** In an early run the approver also said yes to "run again WITHOUT the sandbox?", and every blocked attack succeeded. A user who approves everything, including escalation, has no protection. That's the case for containers (pi) or for disallowing escalation entirely (Claude Code's `allowUnsandboxedCommands: false`).
 
-The lesson 07 eval still passes under the sandbox, because exec defaults to yolo + sandbox. A 3-task smoke run with Haiku: 3/3.
+The lesson 07 eval passed in a macOS smoke run with yolo mode and the sandbox enabled: 3/3 tasks with Haiku. On Linux the reference implementation does not enable a sandbox.
 
 ## Exercises
 

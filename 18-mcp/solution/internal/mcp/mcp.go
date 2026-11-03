@@ -87,6 +87,10 @@ func Start(ctx context.Context, name string, argv []string, env []string) (*Clie
 		c.Close()
 		return nil, fmt.Errorf("mcp %s: initialize: %w", name, err)
 	}
+	if init.ProtocolVersion != ProtocolVersion {
+		c.Close()
+		return nil, fmt.Errorf("mcp %s: unsupported protocol version %q (want %q)", name, init.ProtocolVersion, ProtocolVersion)
+	}
 	c.serverName, c.instructions = init.ServerInfo.Name, init.Instructions
 	if err := c.notify("notifications/initialized", nil); err != nil {
 		c.Close()

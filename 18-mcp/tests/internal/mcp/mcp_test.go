@@ -51,6 +51,19 @@ func TestHandshakeAndList(t *testing.T) {
 	}
 }
 
+func TestHandshakeRejectsUnsupportedVersion(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	script := `read line; printf '%s\n' '{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2099-01-01"}}'; read line`
+	c, err := mcp.Start(ctx, "incompatible", []string{"/bin/sh", "-c", script}, nil)
+	if c != nil {
+		c.Close()
+	}
+	if err == nil || !strings.Contains(err.Error(), "unsupported protocol version") {
+		t.Fatalf("expected unsupported version error, got %v", err)
+	}
+}
+
 func TestCall(t *testing.T) {
 	c := start(t)
 	ctx := context.Background()

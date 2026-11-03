@@ -36,7 +36,7 @@ Prompts, tool descriptions and edit strategies are all hypotheses until an eval 
 - prints every event except text and thinking deltas as one JSON line (the `message_end` event carries the full text);
 - exits with 0 on success, 1 on agent failure, 2 on bad usage.
 
-There's nobody to confirm commands, so `exec` runs **only in throwaway directories**. That's the interim rule until lesson 09 adds a sandbox.
+There's nobody to confirm commands. Run `exec` in an isolated environment: a throwaway working directory alone does not stop commands from accessing other files or the network. Lesson 09 adds a macOS sandbox; it does not implement one for Linux.
 
 ### A task is a directory
 
